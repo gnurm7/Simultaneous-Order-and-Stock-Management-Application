@@ -1,0 +1,69 @@
+﻿@model yazlab3.Models.Customer
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h1>Welcome to the Application</h1>
+
+<!-- Kayıt Ol Kısmı -->
+<div class="row">
+    <div class="col-md-6">
+        <h2>Kayıt Ol</h2>
+        <form asp-action="Create" asp-controller="Customers" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="CustomerName" class="control-label"></label>
+                <input asp-for="CustomerName" class="form-control" placeholder="Adınızı Girin" />
+                <span asp-validation-for="CustomerName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="KullaniciAdi" class="control-label"></label>
+                <input asp-for="KullaniciAdi" class="form-control" placeholder="Kullanıcı Adı Girin" />
+                <span asp-validation-for="KullaniciAdi" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Sifre" class="control-label"></label>
+                <input asp-for="Sifre" type="password" class="form-control" placeholder="Şifre Girin" />
+                <span asp-validation-for="Sifre" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Eposta" class="control-label"></label>
+                <input asp-for="Eposta" type="email" class="form-control" placeholder="E-posta Girin" />
+                <span asp-validation-for="Eposta" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Budget" class="control-label"></label>
+                <input asp-for="Budget" class="form-control" placeholder="Bütçe Girin (500-3000 TL)" />
+                <span asp-validation-for="Budget" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="CustomerType" class="control-label"></label>
+                <select asp-for="CustomerType" class="form-control">
+                    <option value="Premium">Premium</option>
+                    <option value="Standard">Standard</option>
+                </select>
+                <span asp-validation-for="CustomerType" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Kayıt Ol" class="btn btn-success" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Giriş Yap Kısmı -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h2>Hesabınız Var mı?</h2>
+        <p>
+            <a asp-action="Login" asp-controller="Customers" class="btn btn-primary">Giriş Yap</a>
+        </p>
+    </div>
+</div>

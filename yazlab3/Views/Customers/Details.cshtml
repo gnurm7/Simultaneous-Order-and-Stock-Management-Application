@@ -1,0 +1,55 @@
+﻿@model yazlab3.Models.Customer
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Customer</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CustomerName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CustomerName)
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.KullaniciAdi)  <!-- Yeni alan -->
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.KullaniciAdi)  <!-- Yeni alan -->
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Eposta)  <!-- Yeni alan -->
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Eposta)  <!-- Yeni alan -->
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CustomerType)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CustomerType)
+        </dd>
+
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TotalSpent)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.TotalSpent)
+        </dd>
+
+        <!-- Şifreyi göstermiyoruz, çünkü şifre gizlidir. -->
+    </dl>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.CustomerID">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>
