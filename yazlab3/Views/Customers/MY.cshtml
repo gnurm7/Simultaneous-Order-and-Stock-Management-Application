@@ -1,9 +1,9 @@
 ﻿@model yazlab3.Models.CustomerProductViewModel
 
 <h1>Hoş Geldiniz, @Model.Customer.CustomerName</h1>
-<p>Müşteri Türü: @Model.Customer.CustomerType</p>
-<p>Bütçeniz: @Model.Customer.Budget TL</p>
-<p>Toplam Harcamanız: @Model.Customer.TotalSpent TL</p>
+<p><strong>Müşteri Türü:</strong> @Model.Customer.CustomerType</p>
+<p><strong>Bütçeniz:</strong> @Model.Customer.Budget TL</p>
+<p><strong>Toplam Harcamanız:</strong> @Model.Customer.TotalSpent TL</p>
 
 <h2>Ürün Listesi</h2>
 <table class="table">
@@ -25,7 +25,10 @@
                 <td>
                     <form asp-action="AddToCart" asp-controller="Customers" method="post">
                         <input type="hidden" name="ProductID" value="@product.ProductID" />
-                        <input type="number" name="Quantity" min="1" max="@product.Stock" required />
+                        <div class="form-group">
+                            <label for="Quantity_@product.ProductID">Adet:</label>
+                            <input id="Quantity_@product.ProductID" type="number" name="Quantity" min="1" max="@product.Stock" required class="form-control" />
+                        </div>
                         <button type="submit" class="btn btn-primary">Sepete Ekle</button>
                     </form>
                 </td>
@@ -34,4 +37,6 @@
     </tbody>
 </table>
 
-<a asp-action="OrderStatus" class="btn btn-success mt-3">Sipariş Durumu</a>
+<div class="mt-3">
+    <a asp-action="OrderStatus" class="btn btn-success">Sipariş Durumu</a>
+</div>

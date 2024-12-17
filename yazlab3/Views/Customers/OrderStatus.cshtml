@@ -1,5 +1,6 @@
-﻿@model IEnumerable<yazlab3.Models.Order> 
-<h1>Sipariş Durumu</h1>
+﻿@model List<Order>
+
+<h2>Siparişleriniz</h2>
 
 <table class="table">
     <thead>
@@ -7,8 +8,9 @@
             <th>Ürün Adı</th>
             <th>Adet</th>
             <th>Toplam Fiyat</th>
-            <th>Sipariş Tarihi</th>
-            <th>Durum</th>
+            <th>Sipariş Durumu</th>
+            <th>Bekleme Süresi</th>
+            <th>Öncelik</th>
         </tr>
     </thead>
     <tbody>
@@ -18,17 +20,9 @@
                 <td>@order.Product.ProductName</td>
                 <td>@order.Quantity</td>
                 <td>@order.TotalPrice TL</td>
-                <td>@order.OrderDate.ToString("dd.MM.yyyy HH:mm")</td>
                 <td>@order.OrderStatus</td>
-                @* <td>
-                    @if (order.OrderStatus == "Onay Bekliyor")
-                    {
-                        <form asp-action="Buy" asp-controller="Customers" method="post">
-                            <input type="hidden" name="OrderID" value="@order.OrderID" />
-                            <button type="submit" class="btn btn-success">Siparişi Onayla</button>
-                        </form>
-                    }
-                </td> *@
+                <td>@order.WaitTime.TotalMinutes dakika</td>
+                <td>@order.OrderPriority</td>  <!-- Siparişin önceliği -->
             </tr>
         }
     </tbody>

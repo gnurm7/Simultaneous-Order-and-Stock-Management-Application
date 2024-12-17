@@ -21,6 +21,9 @@ namespace yazlab3.Models
         public string CustomerType { get; set; } // "Premium" veya "Standard"
         public double TotalSpent { get; set; }
 
+        public int PriorityScore { get; set; }  // Dinamik öncelik skoru
+        public DateTime RequestTime { get; set; } // Sipariş isteği başlama zamanı //order date ile eşşit gereksşz kalio
+
         public ICollection<Order>? Orders { get; set; }//nullable olarak ayarla işilkiler olduğu için veritabannına kaydetmiyır
     }
 
