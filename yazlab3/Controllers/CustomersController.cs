@@ -4,12 +4,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.EntityFrameworkCore;
+using yazlab3.Controllers.LogController;
 using yazlab3.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using Logger = yazlab3.Controllers.LogController;
 
 namespace yazlab3.Controllers
 {
-    public class CustomersController : Controller
+    public class CustomersController : Controller//MVC açıyor neeeee
     {
         private readonly Context _context;
 
@@ -109,86 +113,86 @@ namespace yazlab3.Controllers
             return View();
         }
 
-       // GET: MY
-public IActionResult MY()
-{
-    // Session'dan giriş yapan kullanıcının ID'sini al
-    int? customerID = HttpContext.Session.GetInt32("CustomerID");
-
-    if (customerID == null)
-    {
-        // Eğer kullanıcı giriş yapmamışsa Login sayfasına yönlendir
-        return RedirectToAction("Login", "Customers");
-    }
-
-    // Kullanıcı bilgilerini al
-    var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
-    if (customer == null)
-    {
-        return NotFound("Kullanıcı bulunamadı.");
-    }
-
-    // Ürünleri al
-    var products = _context.Products.ToList();
-
-    // Kullanıcı ve ürün bilgilerini View'e gönder
-    var viewModel = new CustomerProductViewModel
-    {
-        Customer = customer,
-        Products = products
-    };
-
-    return View(viewModel);
-}
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Buy(int ProductID, int Quantity)
-        {
-            // Giriş yapan kullanıcıyı session'dan al
-            int? customerID = HttpContext.Session.GetInt32("CustomerID");
-
-            if (customerID == null)
+                   // GET: MY
+                    public IActionResult MY()
             {
-                // Eğer kullanıcı giriş yapmamışsa Login sayfasına yönlendir
-                return RedirectToAction("Login", "Customers");
+                // Session'dan giriş yapan kullanıcının ID'sini al
+                      int? customerID = HttpContext.Session.GetInt32("CustomerID");
+
+                if (customerID == null)
+                {
+                    // Eğer kullanıcı giriş yapmamışsa Login sayfasına yönlendir
+                    return RedirectToAction("Login", "Customers");
+                }
+
+                // Kullanıcı bilgilerini al
+                var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
+                if (customer == null)
+                {
+                    return NotFound("Kullanıcı bulunamadı.");
+                }
+
+                // Ürünleri al
+                var products = _context.Products.ToList();
+
+                // Kullanıcı ve ürün bilgilerini View'e gönder
+                var viewModel = new CustomerProductViewModel
+                {
+                    Customer = customer,
+                    Products = products
+                };
+
+                return View(viewModel);
             }
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult Buy(int ProductID, int Quantity)
+        //{
+        //    // Giriş yapan kullanıcıyı session'dan al
+        //    int? customerID = HttpContext.Session.GetInt32("CustomerID");
 
-            // Kullanıcıyı al
-            var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
-            if (customer == null)
-            {
-                return NotFound("Kullanıcı bulunamadı.");
-            }
+        //    if (customerID == null)
+        //    {
+        //        // Eğer kullanıcı giriş yapmamışsa Login sayfasına yönlendir
+        //        return RedirectToAction("Login", "Customers");
+        //    }
 
-            // Ürünü al
-            var product = _context.Products.FirstOrDefault(p => p.ProductID == ProductID);
-            if (product == null || product.Stock < Quantity)
-            {
-                return BadRequest("Ürün bulunamadı veya yetersiz stok.");
-            }
+        //    // Kullanıcıyı al
+        //    var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
+        //    if (customer == null)
+        //    {
+        //        return NotFound("Kullanıcı bulunamadı.");
+        //    }
 
-            // Ürün stoğunu azalt
-            product.Stock -= Quantity;
+        //    // Ürünü al
+        //    var product = _context.Products.FirstOrDefault(p => p.ProductID == ProductID);
+        //    if (product == null || product.Stock < Quantity)
+        //    {
+        //        return BadRequest("Ürün bulunamadı veya yetersiz stok.");
+        //    }
 
-            // Toplam fiyatı hesapla
-            double totalPrice = (double)(product.Price * Quantity);
+        //    // Ürün stoğunu azalt
+        //    product.Stock -= Quantity;
 
-            // Kullanıcı bütçesini kontrol et
-            if (customer.Budget < totalPrice)
-            {
-                return BadRequest("Bütçe yetersiz.");
-            }
+        //    // Toplam fiyatı hesapla
+        //    double totalPrice = (double)(product.Price * Quantity);
 
-            // Kullanıcının bütçesinden düş ve toplam harcamasını güncelle
-            customer.Budget -= totalPrice;
-            customer.TotalSpent += totalPrice;
+        //    // Kullanıcı bütçesini kontrol et
+        //    if (customer.Budget < totalPrice)
+        //    {
+        //        return BadRequest("Bütçe yetersiz.");
+        //    }
 
-            // Değişiklikleri kaydet
-            _context.SaveChanges();
+        //    // Kullanıcının bütçesinden düş ve toplam harcamasını güncelle
+        //    customer.Budget -= totalPrice;
+        //    customer.TotalSpent += totalPrice;
 
-            // Başarılı satın alma sonrası My sayfasına yönlendir
-            return RedirectToAction("My");
-        }
+        //    // Değişiklikleri kaydet
+        //    _context.SaveChanges();
+
+        //    // Başarılı satın alma sonrası My sayfasına yönlendir
+        //    return RedirectToAction("My");
+        //}
 
         // POST: Customers/AddToCart
         [HttpPost]
@@ -219,10 +223,16 @@ public IActionResult MY()
                 OrderDate = DateTime.Now,
                 OrderStatus = "Onay Bekliyor"
             };
+            //bak random geldim buraya add cart mış mesela
 
             _context.Orders.Add(order);
             _context.SaveChanges();
-
+          ////  Mutex
+          //  new Thread(new ThreadStart(() =>
+          //  {//Şimdi o kadar 
+          //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
+          //  })
+          //  ).Start();
             return RedirectToAction("OrderStatus");
         }
 

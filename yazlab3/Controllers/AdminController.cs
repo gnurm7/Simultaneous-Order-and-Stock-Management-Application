@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using System.Reflection.Metadata.Ecma335;
 using yazlab3.Models;
+using Logger = yazlab3.Controllers.LogController;
 
 public class AdminController : Controller
 {
@@ -19,31 +22,83 @@ public class AdminController : Controller
             .Include(o => o.Customer) // Müşteri bilgilerini dahil et  
             .Include(o => o.Product)   // Ürün bilgilerini dahil et  
             .ToList(); // Tüm siparişleri al  
+
+        new Thread(new ThreadStart(bilmemne)).Start();//Örnek veriyorum burda istediğin yerde çağırabilirsin keyfine göre mesela müsteri satın aldığı zaman çağırım b,herhangi contolreer önemli mi
         return View(orders);
     }
+    public void bilmemne()
+    {
+        //işlem x
+    }
+    public string BuyProduct(int customerId, int productId, int quantity)
+    {
+        // Kullanıcıyı al
+        var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
+        if (customer == null)
+        {
+            return "Kullanıcı bulunamadı.";
+        }
 
-    // Siparişi onaylama metodunu tanımlama  
+        // Ürünü al
+        var product = _context.Products.FirstOrDefault(p => p.ProductID == productId);
+        if (product == null || product.Stock < quantity)
+        {
+            return "Ürün bulunamadı veya yetersiz stok.";
+        }
+
+        // Toplam fiyatı hesapla
+        double totalPrice = (double)(product.Price * quantity);
+
+        // Kullanıcı bütçesini kontrol et
+        if (customer.Budget < totalPrice)
+        {
+            return "Bütçe yetersiz.";
+        }
+
+        // Stok düş, bütçeden düş ve toplam harcamayı güncelle
+        product.Stock -= quantity;
+        customer.Budget -= totalPrice;
+        customer.TotalSpent += totalPrice;
+
+        _context.SaveChanges();
+        // bu gerçek bir log işlemi //log işlemi burasııııı
+        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), Logger.UserType.Admin, null, "Bilgilendirme", "Satın alma başarılı.");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
+
+
+        //new Thread(new ThreadStart(() => { ).Start();
+
+        //  new Thread(new ThreadStart(() =>
+        //  {//Şimdi o kadar 
+        //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
+        //  })
+        //  ).Start();
+        return "Ürün satın alındı.";
+    }
     public IActionResult ApproveOrder(int orderId)
     {
-        var existingOrder = _context.Orders.FirstOrDefault(o => o.OrderID == orderId);
+        var existingOrder = _context.Orders
+            .Include(o => o.Customer)  // Müşteri bilgisini dahil et
+            .Include(o => o.Product)   // Ürün bilgisini dahil et
+            .FirstOrDefault(o => o.OrderID == orderId);
+
         if (existingOrder == null)
         {
             return NotFound("Sipariş bulunamadı.");
         }
 
-        // Siparişin durumunu ve onay tarihini güncelle  
+        // Siparişin durumunu ve onay tarihini güncelle
         existingOrder.OrderStatus = "Onaylandı";
         existingOrder.ApprovalDate = DateTime.Now; // Onay tarihi kaydedilir  
-        existingOrder.WaitTime = existingOrder.ApprovalDate - existingOrder.OrderDate; // WaitTime'ı hesapla  //yanlıs hesaplio glb 
+        existingOrder.WaitTime = existingOrder.ApprovalDate - existingOrder.OrderDate; // WaitTime'ı hesapla  
 
         // Müşteri bilgilerini al  
         var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == existingOrder.CustomerID);
         if (customer != null)
         {
-            // Temel öncelik skorunu belirle  
+            // Temel öncelik skorunu belirle
             int basePriority = customer.CustomerType == "Premium" ? 15 : 10;
             double waitTimeWeight = 0.5;
-            double waitTimeInSeconds = existingOrder.WaitTime.TotalSeconds;
+            double waitTimeInSeconds = existingOrder.WaitTime.TotalSeconds;//tüm zamanı saniiye olarak al demek TotalMinutes, TotalHours, TotalDays
             existingOrder.OrderPriority = (int)(basePriority + (waitTimeInSeconds * waitTimeWeight));
 
             // Müşterinin öncelik skorunu güncelle  
@@ -52,8 +107,21 @@ public class AdminController : Controller
 
         _context.SaveChanges();
 
+        // Müşteri ve sipariş nesnelerinin null olmadığından emin olun
+        if (customer != null && existingOrder != null)
+        {
+            // Sipariş onaylandıktan sonra ürün satın alma işlemini çağır
+            string purchaseResult = BuyProduct(customer.CustomerID, existingOrder.ProductID, existingOrder.Quantity);
+            ViewBag.PurchaseMessage = purchaseResult;  // Mesajı ViewBag'e ekle
+        }
+        else
+        {
+            ViewBag.PurchaseMessage = "Müşteri veya sipariş bulunamadı.";
+        }
+
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  
     }
+
 
     // Siparişi reddetme metodunu tanımlama  
     public IActionResult RejectOrder(int orderId)
@@ -65,26 +133,13 @@ public class AdminController : Controller
         }
 
         // Siparişin durumunu ve reddedilme tarihini güncelle  
-        existingOrder.OrderStatus = "Reddedildi";
+        existingOrder.OrderStatus = "Reddedildi";//ay yukarıya yapmısım sadece reddette yok Şuan beynim offline benim algoritmik bişey sorma kodluk bişey varsa onu sor :( hee tamaam doğru diyelim bu işleme şimdi threadleri fln nasıl yapım devamı aklıma gelmio loglama fln
         existingOrder.ApprovalDate = DateTime.Now; // Reddetme tarihi kaydedilir  
         existingOrder.WaitTime = existingOrder.ApprovalDate - existingOrder.OrderDate; // WaitTime'ı hesapla  
-        // Değişiklikleri kaydet  
+        // Değişiklikleri kaydet  ABLA simdi bu hesaplama doğru mu date timelerı birbirinden çıkarıom veri tabanında söyle kaydedilio su virgülden sonrakiler hesaplamada sorun cıkarır mı yuvarlama yap tmam peki ben oncelik sıralamasını doğru mu anlamısım 
         _context.SaveChanges();
 
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  
     }
-    public IActionResult CalculatePriorty(int customerId)//neden bu ikinciye eşit oldu
-    {
-        var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
-        if (customer != null)
-        {
-
-            // Temel öncelik skorunu belirle  
-            int basePriority = customer.CustomerType == "Premium" ? 15 : 10;
-            double waitTimeWeight = 0.5;
-            
-        
-        }
-        return RedirectToAction("OrderList");
-    }
+  
 }

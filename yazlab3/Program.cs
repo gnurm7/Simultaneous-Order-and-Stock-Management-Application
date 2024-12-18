@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using yazlab3.Controllers;
+using yazlab3.Controllers.LogController;
 using yazlab3.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Servisler buraya eklenir
+
 builder.Services.AddDbContext<Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 // Session'ý eklemek için gerekli servisler
 builder.Services.AddDistributedMemoryCache(); // Bellek tabanlý cache
 builder.Services.AddSession(options =>
@@ -17,6 +19,9 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<Context>();
+
+
 
 var app = builder.Build(); // Build iþlemi servisten sonra yapýlmalý
 

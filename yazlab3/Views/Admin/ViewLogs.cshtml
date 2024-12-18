@@ -1,0 +1,37 @@
+﻿@model IEnumerable<yazlab3.Models.Log>
+
+@{
+    ViewData["Title"] = "Loglar";
+}
+
+<h2>Admin Logları</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Müşteri ID</th>
+            <th>Sipariş ID</th>
+            <th>Log Türü</th>
+            <th>Log Detayları</th>
+            <th>Log Tarihi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var log in Model)
+        {
+            <tr>
+                <td>@log.LogID</td>
+                <td>@log.CustomerID</td>
+                <td>@log.OrderID</td>
+                <td>@log.LogType</td>
+                <td>@log.LogDetails</td>
+                <td>@log.LogDate</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p>
+    <a href="@Url.Action("OrderList", "Admin")">Siparişler Listesine Dön</a>
+</p>

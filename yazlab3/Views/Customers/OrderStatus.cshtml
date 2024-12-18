@@ -1,7 +1,12 @@
 ﻿@model List<Order>
 
 <h2>Siparişleriniz</h2>
-
+@if (ViewBag.PurchaseMessage != null)
+{
+    <div class="alert alert-info">
+        @ViewBag.PurchaseMessage
+    </div>
+}
 <table class="table">
     <thead>
         <tr>
