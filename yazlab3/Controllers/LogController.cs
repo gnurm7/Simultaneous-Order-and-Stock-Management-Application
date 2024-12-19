@@ -8,12 +8,12 @@ namespace yazlab3.Controllers.LogController
     public enum UserType
     {
         Admin = 1,
-        Musteri = 2
+        Customer = 2
     }
     public class Log
     {
         private LogContext _LogContextObj;
-        public Log(int? id, UserType? type, int? order_id, string? title, string? log)
+        public Log(int? id,  int? order_id, UserType? type, string? title, string? log)
         {
             var optionsBuilder = new DbContextOptionsBuilder<LogContext>();
             optionsBuilder.UseSqlServer("Server=DESKTOP-PMBMQKM\\SQLEXPRESS;Database=yazlab3;Integrated Security=True;TrustServerCertificate=True;");

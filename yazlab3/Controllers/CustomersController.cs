@@ -13,7 +13,7 @@ using Logger = yazlab3.Controllers.LogController;
 
 namespace yazlab3.Controllers
 {
-    public class CustomersController : Controller//MVC açıyor neeeee
+    public class CustomersController : Controller
     {
         private readonly Context _context;
 
@@ -79,6 +79,7 @@ namespace yazlab3.Controllers
                 // Hata mesajını yazdırarak sorunun ne olduğunu anlamaya çalışın
                 Console.WriteLine($"Error occurred: {ex.Message}");
                 // Geriye dön ve hata mesajı göster
+                new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", " Yeni bir kullanıcı kayıt oldu.");
                 return View(customer);
             }
 
@@ -110,89 +111,42 @@ namespace yazlab3.Controllers
 
             // Giriş başarısız: Hata mesajı göster
             ModelState.AddModelError("", "Geçersiz kullanıcı adı veya şifre.");
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Kullanıcı Giriş yaptı.");
             return View();
         }
 
-                   // GET: MY
-                    public IActionResult MY()
+        // GET: MY
+        public IActionResult MY()
+        {
+            // Session'dan giriş yapan kullanıcının ID'sini al
+            int? customerID = HttpContext.Session.GetInt32("CustomerID");
+
+            if (customerID == null)
             {
-                // Session'dan giriş yapan kullanıcının ID'sini al
-                      int? customerID = HttpContext.Session.GetInt32("CustomerID");
-
-                if (customerID == null)
-                {
-                    // Eğer kullanıcı giriş yapmamışsa Login sayfasına yönlendir
-                    return RedirectToAction("Login", "Customers");
-                }
-
-                // Kullanıcı bilgilerini al
-                var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
-                if (customer == null)
-                {
-                    return NotFound("Kullanıcı bulunamadı.");
-                }
-
-                // Ürünleri al
-                var products = _context.Products.ToList();
-
-                // Kullanıcı ve ürün bilgilerini View'e gönder
-                var viewModel = new CustomerProductViewModel
-                {
-                    Customer = customer,
-                    Products = products
-                };
-
-                return View(viewModel);
+                // Eğer kullanıcı giriş yapmamışsa Login sayfasına yönlendir
+                return RedirectToAction("Login", "Customers");
             }
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public IActionResult Buy(int ProductID, int Quantity)
-        //{
-        //    // Giriş yapan kullanıcıyı session'dan al
-        //    int? customerID = HttpContext.Session.GetInt32("CustomerID");
 
-        //    if (customerID == null)
-        //    {
-        //        // Eğer kullanıcı giriş yapmamışsa Login sayfasına yönlendir
-        //        return RedirectToAction("Login", "Customers");
-        //    }
+            // Kullanıcı bilgilerini al
+            var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
+            if (customer == null)
+            {
+                return NotFound("Kullanıcı bulunamadı.");
+            }
 
-        //    // Kullanıcıyı al
-        //    var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
-        //    if (customer == null)
-        //    {
-        //        return NotFound("Kullanıcı bulunamadı.");
-        //    }
+            // Ürünleri al
+            var products = _context.Products.ToList();
 
-        //    // Ürünü al
-        //    var product = _context.Products.FirstOrDefault(p => p.ProductID == ProductID);
-        //    if (product == null || product.Stock < Quantity)
-        //    {
-        //        return BadRequest("Ürün bulunamadı veya yetersiz stok.");
-        //    }
+            // Kullanıcı ve ürün bilgilerini View'e gönder
+            var viewModel = new CustomerProductViewModel
+            {
+                Customer = customer,
+                Products = products
+            };
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Satın alma Sayfasına giriş başarılı.");
+            return View(viewModel);
+        }
 
-        //    // Ürün stoğunu azalt
-        //    product.Stock -= Quantity;
-
-        //    // Toplam fiyatı hesapla
-        //    double totalPrice = (double)(product.Price * Quantity);
-
-        //    // Kullanıcı bütçesini kontrol et
-        //    if (customer.Budget < totalPrice)
-        //    {
-        //        return BadRequest("Bütçe yetersiz.");
-        //    }
-
-        //    // Kullanıcının bütçesinden düş ve toplam harcamasını güncelle
-        //    customer.Budget -= totalPrice;
-        //    customer.TotalSpent += totalPrice;
-
-        //    // Değişiklikleri kaydet
-        //    _context.SaveChanges();
-
-        //    // Başarılı satın alma sonrası My sayfasına yönlendir
-        //    return RedirectToAction("My");
-        //}
 
         // POST: Customers/AddToCart
         [HttpPost]
@@ -227,14 +181,64 @@ namespace yazlab3.Controllers
 
             _context.Orders.Add(order);
             _context.SaveChanges();
-          ////  Mutex
-          //  new Thread(new ThreadStart(() =>
-          //  {//Şimdi o kadar 
-          //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
-          //  })
-          //  ).Start();
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Ürün sepete eklendi.Müşterinin siparişi işleme alındı.");
+            ////  Mutex
+            //  new Thread(new ThreadStart(() =>
+            //  {//Şimdi o kadar 
+            //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
+            //  })
+            //  ).Start();
             return RedirectToAction("OrderStatus");
         }
+        //public string BuyProduct(int customerId, int productId, int quantity, int? orderId)
+        //{
+
+
+        //    // Kullanıcıyı al
+        //    var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
+        //    if (customer == null)
+        //    {
+        //        return "Kullanıcı bulunamadı.";
+        //    }
+
+        //    // Ürünü al
+        //    var product = _context.Products.FirstOrDefault(p => p.ProductID == productId);
+        //    if (product == null || product.Stock < quantity)
+        //    {
+        //        return "Ürün bulunamadı veya yetersiz stok.";
+        //    }
+
+        //    // Toplam fiyatı hesapla
+        //    double totalPrice = (double)(product.Price * quantity);
+
+        //    // Kullanıcı bütçesini kontrol et
+        //    if (customer.Budget < totalPrice)
+        //    {
+        //        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Müşteri bütcesi yetersiz.");
+        //        return "Bütçe yetersiz.";
+        //    }
+
+        //    // Stok düş, bütçeden düş ve toplam harcamayı güncelle
+        //    product.Stock -= quantity;
+        //    customer.Budget -= totalPrice;
+        //    customer.TotalSpent += totalPrice;
+
+        //    _context.SaveChanges();
+
+
+        //    // bu gerçek bir log işlemi //log işlemi burasııııı
+        //    new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Satın alma başarılı.");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
+
+
+        //    //new Thread(new ThreadStart(() => { ).Start();
+
+        //    //  new Thread(new ThreadStart(() =>
+        //    //  {//Şimdi o kadar 
+        //    //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
+        //    //  })
+        //    //  ).Start();
+        //    return "Ürün satın alındı.";
+        //}
 
 
         // GET: Customers/OrderStatus
@@ -251,7 +255,7 @@ namespace yazlab3.Controllers
                 .Where(o => o.CustomerID == customerID.Value)
                 .Include(o => o.Product) // Ürün bilgilerini de çek
                 .ToList();
-
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Müşteri Satın aldığı ürünler sayfasında.");
             return View(orders);
         }
 
@@ -304,6 +308,7 @@ namespace yazlab3.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Kullanıcı bilgilerini güncelledi.");
             return View(customer);
         }
 
@@ -321,7 +326,6 @@ namespace yazlab3.Controllers
             {
                 return NotFound();
             }
-
             return View(customer);
         }
 
@@ -337,6 +341,7 @@ namespace yazlab3.Controllers
             }
 
             await _context.SaveChangesAsync();
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Kullanıcı Silindi.");
             return RedirectToAction(nameof(Index));
         }
 

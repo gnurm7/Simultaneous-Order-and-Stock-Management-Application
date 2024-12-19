@@ -23,15 +23,17 @@ public class AdminController : Controller
             .Include(o => o.Product)   // Ürün bilgilerini dahil et  
             .ToList(); // Tüm siparişleri al  
 
-        new Thread(new ThreadStart(bilmemne)).Start();//Örnek veriyorum burda istediğin yerde çağırabilirsin keyfine göre mesela müsteri satın aldığı zaman çağırım b,herhangi contolreer önemli mi
+     //   new Thread(new ThreadStart(bilmemne)).Start();//Örnek veriyorum burda istediğin yerde çağırabilirsin keyfine göre mesela müsteri satın aldığı zaman çağırım b,herhangi contolreer önemli mi
         return View(orders);
     }
-    public void bilmemne()
+    //public void bilmemne()
+    //{
+    //    //işlem x
+    //}
+    public string BuyProduct(int customerId, int productId, int quantity, int? orderId)
     {
-        //işlem x
-    }
-    public string BuyProduct(int customerId, int productId, int quantity)
-    {
+        
+
         // Kullanıcıyı al
         var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
         if (customer == null)
@@ -52,6 +54,7 @@ public class AdminController : Controller
         // Kullanıcı bütçesini kontrol et
         if (customer.Budget < totalPrice)
         {
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Müşteri bütcesi yetersiz.");
             return "Bütçe yetersiz.";
         }
 
@@ -61,8 +64,10 @@ public class AdminController : Controller
         customer.TotalSpent += totalPrice;
 
         _context.SaveChanges();
+
+
         // bu gerçek bir log işlemi //log işlemi burasııııı
-        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), Logger.UserType.Admin, null, "Bilgilendirme", "Satın alma başarılı.");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
+        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId,Logger.UserType.Admin ,"Bilgilendirme", "Satın alma başarılı.");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
 
 
         //new Thread(new ThreadStart(() => { ).Start();
@@ -111,7 +116,7 @@ public class AdminController : Controller
         if (customer != null && existingOrder != null)
         {
             // Sipariş onaylandıktan sonra ürün satın alma işlemini çağır
-            string purchaseResult = BuyProduct(customer.CustomerID, existingOrder.ProductID, existingOrder.Quantity);
+            string purchaseResult = BuyProduct(customer.CustomerID, existingOrder.ProductID, existingOrder.Quantity,existingOrder.OrderID);
             ViewBag.PurchaseMessage = purchaseResult;  // Mesajı ViewBag'e ekle
         }
         else
@@ -138,8 +143,17 @@ public class AdminController : Controller
         existingOrder.WaitTime = existingOrder.ApprovalDate - existingOrder.OrderDate; // WaitTime'ı hesapla  
         // Değişiklikleri kaydet  ABLA simdi bu hesaplama doğru mu date timelerı birbirinden çıkarıom veri tabanında söyle kaydedilio su virgülden sonrakiler hesaplamada sorun cıkarır mı yuvarlama yap tmam peki ben oncelik sıralamasını doğru mu anlamısım 
         _context.SaveChanges();
-
+        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Sipariş reddedildi.");
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  
     }
-  
+    public IActionResult ViewLogs()
+    {
+        var logs = _context.Logs
+                           .OrderByDescending(l => l.LogDate)  // Logları en yeni olanı en üstte olacak şekilde sırala
+                           .Take(20)  // Son 20 logu al
+                           .ToList();
+
+        return View(logs);  // View'a logları gönder
+    }
+
 }
