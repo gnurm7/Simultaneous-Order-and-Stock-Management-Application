@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.EntityFrameworkCore;
 using yazlab3.Controllers.LogController;
@@ -177,7 +178,10 @@ namespace yazlab3.Controllers
                 OrderDate = DateTime.Now,
                 OrderStatus = "Onay Bekliyor"
             };
-            //bak random geldim buraya add cart mış mesela
+//product.Stock -= quantity;
+        //    customer.Budget -= totalPrice;
+        //    customer.TotalSpent += totalPrice;
+
 
             _context.Orders.Add(order);
             _context.SaveChanges();
@@ -188,7 +192,32 @@ namespace yazlab3.Controllers
             //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
             //  })
             //  ).Start();
-            return RedirectToAction("OrderStatus");
+            return RedirectToAction("Card");
+            //aynı kulllanıcın sipariş bilgisinide al sessionda tut 
+        }
+        public IActionResult Card(int ProductID,int Quantity)
+        {//sessionlaarı unutma
+            // Giriş yapan kullanıcının siparişlerini getir
+            int? customerID = HttpContext.Session.GetInt32("CustomerID");
+            if (customerID == null)
+            {
+                return RedirectToAction("Login", "Customers"); // Giriş yapılmadıysa Login'e yönlendir
+            }
+
+            var orders = _context.Orders
+                .Where(o => o.CustomerID == customerID.Value)
+                .Include(o => o.Product) // Ürün bilgilerini de çek
+                .ToList();
+            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Müşteri Satın aldığı ürünler sayfasında.");
+            return View(orders);
+            int? productID = HttpContext.Session.GetInt32("ProductID");
+            //  ürünü tutalım
+            var product = _context.Products.FirstOrDefault(p => p.ProductID == ProductID);
+            if (product == null || product.Stock < Quantity)
+            {
+                return BadRequest("Ürün bulunamadı veya stok yetersiz.");
+            }
+            return View();
         }
         //public string BuyProduct(int customerId, int productId, int quantity, int? orderId)
         //{

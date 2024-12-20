@@ -67,7 +67,7 @@ public class AdminController : Controller
 
 
         // bu gerçek bir log işlemi //log işlemi burasııııı
-        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId,Logger.UserType.Admin ,"Bilgilendirme", "Satın alma başarılı.");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
+        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId,Logger.UserType.Admin ,"Bilgilendirme", "Satın alma başarılı.approveorderdaki buy içinde");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
 
 
         //new Thread(new ThreadStart(() => { ).Start();
@@ -123,7 +123,7 @@ public class AdminController : Controller
         {
             ViewBag.PurchaseMessage = "Müşteri veya sipariş bulunamadı.";
         }
-
+        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "admin onayladı Satın alma başarılı.approveorderda");
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  
     }
 
