@@ -30,55 +30,55 @@ public class AdminController : Controller
     //{
     //    //işlem x
     //}
-    public string BuyProduct(int customerId, int productId, int quantity, int? orderId)
-    {
+    //public string BuyProduct(int customerId, int productId, int quantity, int? orderId)
+    //{
         
 
-        // Kullanıcıyı al
-        var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
-        if (customer == null)
-        {
-            return "Kullanıcı bulunamadı.";
-        }
+    //    // Kullanıcıyı al
+    //    var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
+    //    if (customer == null)
+    //    {
+    //        return "Kullanıcı bulunamadı.";
+    //    }
 
-        // Ürünü al
-        var product = _context.Products.FirstOrDefault(p => p.ProductID == productId);
-        if (product == null || product.Stock < quantity)
-        {
-            return "Ürün bulunamadı veya yetersiz stok.";
-        }
+    //    // Ürünü al
+    //    var product = _context.Products.FirstOrDefault(p => p.ProductID == productId);
+    //    if (product == null || product.Stock < quantity)
+    //    {
+    //        return "Ürün bulunamadı veya yetersiz stok.";
+    //    }
 
-        // Toplam fiyatı hesapla
-        double totalPrice = (double)(product.Price * quantity);
+    //    // Toplam fiyatı hesapla
+    //    double totalPrice = (double)(product.Price * quantity);
 
-        // Kullanıcı bütçesini kontrol et
-        if (customer.Budget < totalPrice)
-        {
-            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Müşteri bütcesi yetersiz.");
-            return "Bütçe yetersiz.";
-        }
+    //    // Kullanıcı bütçesini kontrol et
+    //    if (customer.Budget < totalPrice)
+    //    {
+    //        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Müşteri bütcesi yetersiz.");
+    //        return "Bütçe yetersiz.";
+    //    }
 
-        // Stok düş, bütçeden düş ve toplam harcamayı güncelle
-        product.Stock -= quantity;
-        customer.Budget -= totalPrice;
-        customer.TotalSpent += totalPrice;
+    //    // Stok düş, bütçeden düş ve toplam harcamayı güncelle
+    //    product.Stock -= quantity;
+    //    customer.Budget -= totalPrice;
+    //    customer.TotalSpent += totalPrice;
 
-        _context.SaveChanges();
-
-
-        // bu gerçek bir log işlemi //log işlemi burasııııı
-        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId,Logger.UserType.Admin ,"Bilgilendirme", "Satın alma başarılı.approveorderdaki buy içinde");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
+    //    _context.SaveChanges();
 
 
-        //new Thread(new ThreadStart(() => { ).Start();
+    //    // bu gerçek bir log işlemi //log işlemi burasııııı
+    //    new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId,Logger.UserType.Admin ,"Bilgilendirme", "Satın alma başarılı.approveorderdaki buy içinde");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
 
-        //  new Thread(new ThreadStart(() =>
-        //  {//Şimdi o kadar 
-        //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
-        //  })
-        //  ).Start();
-        return "Ürün satın alındı.";
-    }
+
+    //    //new Thread(new ThreadStart(() => { ).Start();
+
+    //    //  new Thread(new ThreadStart(() =>
+    //    //  {//Şimdi o kadar 
+    //    //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
+    //    //  })
+    //    //  ).Start();
+    //    return "Ürün satın alındı.";
+    //}
     public IActionResult ApproveOrder(int orderId)
     {
         var existingOrder = _context.Orders
@@ -103,11 +103,11 @@ public class AdminController : Controller
             // Temel öncelik skorunu belirle
             int basePriority = customer.CustomerType == "Premium" ? 15 : 10;
             double waitTimeWeight = 0.5;
-            double waitTimeInSeconds = existingOrder.WaitTime.TotalSeconds;//tüm zamanı saniiye olarak al demek TotalMinutes, TotalHours, TotalDays
+            double waitTimeInSeconds = existingOrder.WaitTime.TotalSeconds; // tüm zamanı saniye olarak al
             existingOrder.OrderPriority = (int)(basePriority + (waitTimeInSeconds * waitTimeWeight));
 
             // Müşterinin öncelik skorunu güncelle  
-            customer.PriorityScore = existingOrder.OrderPriority;
+            customer.PriorityScore = existingOrder.OrderPriority; // her siparişte değişiyor
         }
 
         _context.SaveChanges();
@@ -115,17 +115,19 @@ public class AdminController : Controller
         // Müşteri ve sipariş nesnelerinin null olmadığından emin olun
         if (customer != null && existingOrder != null)
         {
-            // Sipariş onaylandıktan sonra ürün satın alma işlemini çağır
-            string purchaseResult = BuyProduct(customer.CustomerID, existingOrder.ProductID, existingOrder.Quantity,existingOrder.OrderID);
-            ViewBag.PurchaseMessage = purchaseResult;  // Mesajı ViewBag'e ekle
+            // Sipariş onaylandıktan sonra "Siparişiniz hazırlanıyor." mesajını ekliyoruz
+            ViewBag.OrderStatusMessage = "Siparişiniz hazırlanıyor.";
         }
         else
         {
-            ViewBag.PurchaseMessage = "Müşteri veya sipariş bulunamadı.";
+            ViewBag.OrderStatusMessage = "Müşteri veya sipariş bulunamadı.";
         }
-        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "admin onayladı Satın alma başarılı.approveorderda");
+
+        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "admin onayladı, satın alma başarılı.");
+
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  
     }
+
 
 
     // Siparişi reddetme metodunu tanımlama  
@@ -140,8 +142,9 @@ public class AdminController : Controller
         // Siparişin durumunu ve reddedilme tarihini güncelle  
         existingOrder.OrderStatus = "Reddedildi";//ay yukarıya yapmısım sadece reddette yok Şuan beynim offline benim algoritmik bişey sorma kodluk bişey varsa onu sor :( hee tamaam doğru diyelim bu işleme şimdi threadleri fln nasıl yapım devamı aklıma gelmio loglama fln
         existingOrder.ApprovalDate = DateTime.Now; // Reddetme tarihi kaydedilir  
-        existingOrder.WaitTime = existingOrder.ApprovalDate - existingOrder.OrderDate; // WaitTime'ı hesapla  
-        // Değişiklikleri kaydet  ABLA simdi bu hesaplama doğru mu date timelerı birbirinden çıkarıom veri tabanında söyle kaydedilio su virgülden sonrakiler hesaplamada sorun cıkarır mı yuvarlama yap tmam peki ben oncelik sıralamasını doğru mu anlamısım 
+       existingOrder.WaitTime = existingOrder.ApprovalDate - existingOrder.OrderDate; // WaitTime'ı hesapla
+        // existingOrder.WaitTime = new DateTime((existingOrder.ApprovalDate - existingOrder.OrderDate).Ticks);
+                                                                                       // Değişiklikleri kaydet  ABLA simdi bu hesaplama doğru mu date timelerı birbirinden çıkarıom veri tabanında söyle kaydedilio su virgülden sonrakiler hesaplamada sorun cıkarır mı yuvarlama yap tmam peki ben oncelik sıralamasını doğru mu anlamısım 
         _context.SaveChanges();
         new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Sipariş reddedildi.");
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  

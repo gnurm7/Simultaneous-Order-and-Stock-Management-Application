@@ -19,9 +19,9 @@ namespace yazlab3.Models
 
         public double Budget { get; set; }
         public string CustomerType { get; set; } // "Premium" veya "Standard"
-        public double TotalSpent { get; set; }
+        public double TotalSpent { get; set; }//girişte istiyoruz
 
-        public int PriorityScore { get; set; }  // Dinamik öncelik skoru //siparişlerde var zaten
+        public int PriorityScore { get; set; }  // Dinamik öncelik skoru //siparişlerde var zaten//
         public DateTime RequestTime { get; set; } // Sipariş isteği başlama zamanı //order date ile eşşit gereksşz kalio
 
         public ICollection<Order>? Orders { get; set; }//nullable olarak ayarla işilkiler olduğu için veritabannına kaydetmiyır

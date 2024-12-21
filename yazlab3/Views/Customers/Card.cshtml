@@ -1,5 +1,85 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model List<Order>
+
 @{
+    ViewData["Title"] = "Sepetim";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<!-- Sipariş alındı mesajı -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+<!-- Sepet boşsa mesaj göster -->
+@if (!Model.Any())
+{
+    <p>Sepetiniz boş.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ürün Adı</th>
+                <th>Miktar</th>
+                <th>Fiyat</th>
+                <th>Toplam</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.Product.ProductName</td>  Ürün adı -->
+                    <td>@order.Quantity</td> <!-- Miktar -->
+                    <td>@order.Product.Price.ToString("C")</td> <!-- Ürün fiyatı -->
+                    <td>@(order.Quantity * order.Product.Price).ToString("C")</td> <!-- Toplam fiyat -->
+                    <td>
+                        <form action="@Url.Action("RemoveFromCart", "Customers")" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="OrderID" value="@order.OrderID" />
+                            <button type="submit" class="btn btn-danger">Sepetten Çıkar</button>
+                        </form>
+
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Toplam Fiyat -->
+    <div>
+        <strong>Toplam Tutar: </strong>
+        @Model.Sum(o => o.Quantity * o.Product.Price).ToString("C")
+    </div>
+
+    <!-- Sipariş Onayla Butonu -->
+    <form action="@Url.Action("Checkout", "Customers")" method="post">
+        @Html.AntiForgeryToken()
+        @foreach (var order in Model)
+        {
+            <input type="hidden" name="productId" value="@order.Product.ProductID" />
+            <input type="hidden" name="quantity" value="@order.Quantity" />
+        }
+        <button type="submit" class="btn btn-success">Siparişi Onayla</button>
+    </form>
+
+}
+
+<!-- Eğer sepet boşsa, kullanıcıyı alışveriş yapmaya yönlendirebilirsiniz -->
+@if (!Model.Any())
+{
+    <a href="@Url.Action("Index", "Products")" class="btn btn-primary">Alışverişe Devam Et</a>
 }

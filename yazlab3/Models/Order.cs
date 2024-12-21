@@ -17,7 +17,7 @@
 
         public int OrderPriority { get; set; }  // Siparişin önceliği customerdaki priority scorea göre belirlencek gereksizglb
 
-
+          public DateTime AddedToCartTime { get; set; } // Sepete eklenme zamanı
         // Navigation properties
         public Customer Customer { get; set; }
         public Product Product { get; set; }
