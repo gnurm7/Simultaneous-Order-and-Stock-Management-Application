@@ -9,5 +9,6 @@
 
         // Navigation property
         public ICollection<Order>? Orders { get; set; }  // Nullable yapıldı
+       
     }
 }

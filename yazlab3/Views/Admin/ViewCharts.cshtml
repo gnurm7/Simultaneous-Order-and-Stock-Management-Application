@@ -1,0 +1,109 @@
+﻿@{
+    // ViewBag'ten JSON formatında gelen veriyi alıyoruz
+    var stokVerileriJson = ViewBag.StokVerileri;
+}
+
+<h2>Stok Takibi - Pie Chart</h2>
+
+<!-- Canvas for Pie Chart -->
+<canvas id="myPieChart" width="400" height="400"></canvas>
+
+<!-- Tablo -->
+<h2>Stok Verileri</h2>
+
+<!-- Tabloya stil ekledik -->
+<style>
+    table {
+        width: 50%; /* Tablonun genişliğini %50'ye ayarlıyoruz */
+        margin: 0 auto; /* Tabloyu ortalıyoruz */
+        font-size: 14px; /* Yazı tipini küçültüyoruz */
+    }
+
+    th, td {
+        padding: 8px 10px; /* Hücrelere biraz boşluk ekliyoruz */
+        text-align: left; /* Yazıyı sola hizalıyoruz */
+    }
+
+    th {
+        background-color: #f2f2f2; /* Başlık hücrelerinin arka planını açık gri yapıyoruz */
+    }
+</style>
+
+<table>
+    <thead>
+        <tr>
+            <th>Ürün Adı</th>
+            <th>Stok Miktarı</th>
+            <th>Fiyat</th>  <!-- Fiyat başlığını ekliyoruz -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var stok in Newtonsoft.Json.JsonConvert.DeserializeObject<List<Product>>(stokVerileriJson))
+        {
+            <tr>
+                <td>@stok.ProductName</td>
+                <td>@stok.Stock</td>
+                <td>@stok.Price.ToString("C")</td> <!-- Fiyatı para birimi formatında gösteriyoruz -->
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Chart.js Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // JSON verisini almak
+    var stokVerileri = @Html.Raw(stokVerileriJson);  // JSON verisini JavaScript'e aktarıyoruz
+
+    // Pie Chart için verilerin hazırlanması
+    var urunAdlari = stokVerileri.map(function (stok) { return stok.ProductName; });
+    var stokMiktarlari = stokVerileri.map(function (stok) { return stok.Stock; });
+    var fiyatlar = stokVerileri.map(function (stok) { return stok.Price; });  // Fiyatları alıyoruz
+
+    // Stok miktarı 10'dan az olanlara kırmızı renk verilecek
+    var renkler = stokVerileri.map(function (stok) {
+        return stok.Stock < 10 ? '#FF0000' : getRandomColor(); // Stok 10'dan azsa kırmızı, diğerleri rastgele renk
+    });
+
+    // Rastgele renkler üretmek için fonksiyon
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    // Pie Chart oluşturulması
+    var ctx = document.getElementById('myPieChart').getContext('2d');
+    var myPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: urunAdlari,  // Ürün adları
+            datasets: [{
+                label: 'Stok Miktarları',
+                data: stokMiktarlari,  // Stok miktarları
+                backgroundColor: renkler, // Ürünlere göre renkler
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (tooltipItem) {
+                            var index = tooltipItem.dataIndex;
+                            return tooltipItem.label + ": " + tooltipItem.raw + " adet, Fiyat: " + fiyatlar[index].toLocaleString("tr-TR", { style: "currency", currency: "TRY" }); // Fiyatı gösteriyoruz
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>

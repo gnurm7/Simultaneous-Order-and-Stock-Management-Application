@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
+using Newtonsoft.Json;
 using System.Reflection.Metadata.Ecma335;
 using yazlab3.Models;
 using Logger = yazlab3.Controllers.LogController;
@@ -14,6 +15,26 @@ public class AdminController : Controller
         _context = context;
     }
 
+    public async Task<IActionResult> ViewCharts()
+    {
+        var stokVerileri = await _context.Products
+            .Select(p => new Product
+            {
+                ProductName = p.ProductName,
+                Stock = p.Stock,
+                Price = p.Price
+            })
+            .ToListAsync();
+
+        // Veriyi ViewBag ile JSON formatında gönderiyoruz
+        ViewBag.StokVerileri = JsonConvert.SerializeObject(stokVerileri);  // JSON'a çeviriyoruz
+
+        return View();
+    }
+    public IActionResult Index()
+    {
+        return View();
+    }          
     // Sipariş listesini gösteren metod  
     public IActionResult OrderList()
     {//inculude ile her şeyi getirebilioz
@@ -26,44 +47,6 @@ public class AdminController : Controller
      //   new Thread(new ThreadStart(bilmemne)).Start();//Örnek veriyorum burda istediğin yerde çağırabilirsin keyfine göre mesela müsteri satın aldığı zaman çağırım b,herhangi contolreer önemli mi
         return View(orders);
     }
-    //public void bilmemne()
-    //{
-    //    //işlem x
-    //}
-    //public string BuyProduct(int customerId, int productId, int quantity, int? orderId)
-    //{
-        
-
-    //    // Kullanıcıyı al
-    //    var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
-    //    if (customer == null)
-    //    {
-    //        return "Kullanıcı bulunamadı.";
-    //    }
-
-    //    // Ürünü al
-    //    var product = _context.Products.FirstOrDefault(p => p.ProductID == productId);
-    //    if (product == null || product.Stock < quantity)
-    //    {
-    //        return "Ürün bulunamadı veya yetersiz stok.";
-    //    }
-
-    //    // Toplam fiyatı hesapla
-    //    double totalPrice = (double)(product.Price * quantity);
-
-    //    // Kullanıcı bütçesini kontrol et
-    //    if (customer.Budget < totalPrice)
-    //    {
-    //        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Müşteri bütcesi yetersiz.");
-    //        return "Bütçe yetersiz.";
-    //    }
-
-    //    // Stok düş, bütçeden düş ve toplam harcamayı güncelle
-    //    product.Stock -= quantity;
-    //    customer.Budget -= totalPrice;
-    //    customer.TotalSpent += totalPrice;
-
-    //    _context.SaveChanges();
 
 
     //    // bu gerçek bir log işlemi //log işlemi burasııııı
@@ -128,7 +111,23 @@ public class AdminController : Controller
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  
     }
 
+    // Dinamik olarak bekleme süresi ve öncelik hesaplama
+    [HttpGet]
+    public JsonResult GetUpdatedOrders()
+    {
+        var orders = _context.Orders
+            .Where(o => o.OrderStatus != "Onaylandı") // Onaylanmayan siparişler
+            .ToList();
 
+        var updatedOrders = orders.Select(o => new
+        {
+            o.OrderID,
+            WaitTime = (DateTime.Now - o.OrderDate).TotalMinutes, // Bekleme süresi
+            o.OrderPriority
+        }).ToList();
+
+        return Json(updatedOrders);
+    }
 
     // Siparişi reddetme metodunu tanımlama  
     public IActionResult RejectOrder(int orderId)
@@ -157,6 +156,46 @@ public class AdminController : Controller
                            .ToList();
 
         return View(logs);  // View'a logları gönder
+    }
+    [HttpPost]
+    public IActionResult ProcessAllOrders()
+    {
+        var pendingOrders = _context.Orders
+            .Include(o => o.Customer)  // Müşteri bilgilerini dahil et
+            .Include(o => o.Product)   // Ürün bilgilerini dahil et
+            .Where(o => o.OrderStatus == "Sepette")  // Sadece bekleyen siparişleri al
+            .OrderByDescending(o => o.OrderPriority) // Önceliğe göre sırala
+            .ToList();
+
+        foreach (var order in pendingOrders)
+        {
+            var product = order.Product;
+            var customer = order.Customer;
+
+            if (product.Stock >= order.Quantity && (int)(customer.Budget) >= order.TotalPrice)
+            {
+                // Stok ve bütçe güncelleniyor
+                product.Stock -= order.Quantity;
+                customer.Budget -= (double)order.TotalPrice;
+                customer.TotalSpent += (double)order.TotalPrice;
+
+                order.OrderStatus = "Onaylandı";
+                order.ApprovalDate = DateTime.Now;
+                order.WaitTime = order.ApprovalDate - order.OrderDate;
+
+                new Logger.Log(HttpContext.Session.GetInt32("AdminID"), order.OrderID, Logger.UserType.Admin, "Bilgilendirme", "Sipariş onaylandı ve işleme alındı.");
+            }
+            else
+            {
+                order.OrderStatus = "Reddedildi";
+                new Logger.Log(HttpContext.Session.GetInt32("AdminID"), order.OrderID, Logger.UserType.Admin, "Bilgilendirme", "Sipariş reddedildi. Yetersiz stok veya bütçe.");
+            }
+        }
+
+        _context.SaveChanges(); // Değişiklikleri kaydet
+        ViewBag.OrderStatusMessage = "Tüm işlemler sırayla tamamlandı.";
+
+        return RedirectToAction("OrderList"); // Sipariş listesine geri dön
     }
 
 }

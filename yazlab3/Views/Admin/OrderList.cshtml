@@ -22,35 +22,70 @@
             <th>Sipariş Durumu</th>
             <th>Bekleme Süresi</th>
             <th>Öncelik</th>
-            <th>İşlemler</th> <!-- İşlem butonları için yeni bir sütun -->
+            <th>İşlemler</th>
         </tr>
     </thead>
     <tbody id="orderTableBody">
         @foreach (var order in orderedModel)
         {
-            <tr class="order-row">
+            <tr class="order-row" id="orderRow_@order.OrderID">
                 <td>@order.Product.ProductID</td>
                 <td>@order.Quantity</td>
                 <td>@order.TotalPrice TL</td>
                 <td>@order.OrderStatus</td>
-                <td>@(order.WaitTime.TotalMinutes) dakika</td> <!-- Bekleme süresini dakika cinsine çevir -->
-                <td>@order.OrderPriority</td> <!-- Siparişin önceliği -->
+                <td class="wait-time">@((DateTime.Now - order.OrderDate).TotalMinutes) dakika</td> <!-- Bekleme süresi -->
+                <td class="order-priority">@order.OrderPriority</td> <!-- Siparişin önceliği -->
                 <td>
-                    @if (order.OrderStatus == "Sepette") // Eğer sipariş durumu onay bekliyorsa
+                    @if (order.OrderStatus == "Sepette") 
                     {
                         <a href="@Url.Action("ApproveOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-success">Onayla</a>
                         <a href="@Url.Action("RejectOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-danger">Reddet</a>
                     }
                     else
                     {
-                        <span class="text-muted">İşlem Tamamlandı</span> <!-- İşlem tamamlandıysa butonları gizle -->
+                        <span class="text-muted">İşlem Tamamlandı</span>
                     }
                 </td>
             </tr>
         }
     </tbody>
 </table>
-
+<div>
+    <form method="post" action="@Url.Action("ProcessAllOrders", "Admin")">
+        <button type="submit" class="btn btn-primary">Tüm İşlemleri Başlat</button>
+    </form>
+</div>
 <p>
     <a href="@Url.Action("ViewLogs", "Admin")">Logları Görüntüle</a>
 </p>
+
+@section Scripts
+{
+    <script>
+        $(document).ready(function () {
+            // Sayfa yüklendikten sonra sürekli çalışacak bir zamanlayıcı başlatıyoruz
+            setInterval(function () {
+                updateOrderDetails();
+            }, 10000); // Her 10 saniyede bir updateOrderDetails fonksiyonunu çağır
+
+            // AJAX ile siparişlerin bekleme süresi ve öncelik skorlarını güncelleyen fonksiyon
+            function updateOrderDetails() {
+                $.ajax({
+                    url: '@Url.Action("GetUpdatedOrders", "Admin")', // Admin controller'ındaki GetUpdatedOrders action'ı
+                    method: 'GET',
+                    success: function (data) {
+                        // Dönen verilerle her bir siparişi güncelle
+                        data.forEach(order => {
+                            var orderRow = $('#orderRow_' + order.OrderID);
+                            orderRow.find('.wait-time').text(order.WaitTime.toFixed(2) + " dakika"); // Bekleme süresi
+                            orderRow.find('.order-priority').text(order.OrderPriority); // Siparişin önceliği
+                        });
+                    },
+                    error: function () {
+                        console.error("Bekleme süresi ve öncelik güncellenemedi.");
+                    }
+                });
+            }
+        });
+    </script>
+}

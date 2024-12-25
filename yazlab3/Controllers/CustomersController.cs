@@ -205,10 +205,8 @@ public IActionResult AddToCart(int ProductID, int Quantity)
     {
         return RedirectToAction("Login", "Customers");
     }
-         
-
-            // Zaman aşımı kontrolü
-            var now = DateTime.Now;
+           // Zaman aşımı kontrolü
+      var now = DateTime.Now;
     var expiredOrders = _context.Orders
        .Where(o => o.CustomerID == customerID && o.OrderStatus == "Sepette")
     .ToList() // Verileri önce client'a al
