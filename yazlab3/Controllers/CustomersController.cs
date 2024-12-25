@@ -105,14 +105,14 @@ namespace yazlab3.Controllers
             {
                 // Giriş başarılı: Kullanıcı ID'sini Session'a kaydet
                 HttpContext.Session.SetInt32("CustomerID", customer.CustomerID);
-
+                 new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Kullanıcı Giriş yaptı.");
                 // Kullanıcıyı My sayfasına yönlendir
                 return RedirectToAction("MY", "Customers");
             }
 
             // Giriş başarısız: Hata mesajı göster
             ModelState.AddModelError("", "Geçersiz kullanıcı adı veya şifre.");
-            new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Kullanıcı Giriş yaptı.");
+           
             return View();
         }
 
@@ -175,9 +175,9 @@ public IActionResult AddToCart(int ProductID, int Quantity)
         return BadRequest("Bütçe yetersiz.");
     }
 
-    // Stok ve bütçe azalt
-    product.Stock -= Quantity;
-    customer.Budget -= totalPrice;
+    //// Stok ve bütçe azalt
+    //product.Stock -= Quantity;
+    //customer.Budget -= totalPrice;
 
     // Sipariş oluştur
     var order = new Order
@@ -238,56 +238,6 @@ public IActionResult AddToCart(int ProductID, int Quantity)
     new Logger.Log(customerID, null, Logger.UserType.Customer, "Bilgilendirme", "Sepet görüntülendi.");
     return View(orders);
 }
-
-        //public string BuyProduct(int customerId, int productId, int quantity, int? orderId)
-        //{
-
-
-        //    // Kullanıcıyı al
-        //    var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
-        //    if (customer == null)
-        //    {
-        //        return "Kullanıcı bulunamadı.";
-        //    }
-
-        //    // Ürünü al
-        //    var product = _context.Products.FirstOrDefault(p => p.ProductID == productId);
-        //    if (product == null || product.Stock < quantity)
-        //    {
-        //        return "Ürün bulunamadı veya yetersiz stok.";
-        //    }
-
-        //    // Toplam fiyatı hesapla
-        //    double totalPrice = (double)(product.Price * quantity);
-
-        //    // Kullanıcı bütçesini kontrol et
-        //    if (customer.Budget < totalPrice)
-        //    {
-        //        new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Müşteri bütcesi yetersiz.");
-        //        return "Bütçe yetersiz.";
-        //    }
-
-        //    // Stok düş, bütçeden düş ve toplam harcamayı güncelle
-        //    product.Stock -= quantity;
-        //    customer.Budget -= totalPrice;
-        //    customer.TotalSpent += totalPrice;
-
-        //    _context.SaveChanges();
-
-
-        //    // bu gerçek bir log işlemi //log işlemi burasııııı
-        //    new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Satın alma başarılı.");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
-
-
-        //    //new Thread(new ThreadStart(() => { ).Start();
-
-        //    //  new Thread(new ThreadStart(() =>
-        //    //  {//Şimdi o kadar 
-        //    //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
-        //    //  })
-        //    //  ).Start();
-        //    return "Ürün satın alındı.";
-        //}
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Checkout(List<int> productIds, List<int> quantities)
@@ -373,11 +323,19 @@ public IActionResult AddToCart(int ProductID, int Quantity)
                 return NotFound("Sepetinizde böyle bir ürün yok.");
             }
 
-            // Ürün ve siparişi bulduktan sonra, stok miktarını arttır
+            // Ürünü ve siparişi bulduktan sonra, stok miktarını arttır
             var product = _context.Products.FirstOrDefault(p => p.ProductID == order.ProductID);
             if (product != null)
             {
                 product.Stock += order.Quantity; // Sepetten çıkarılacak miktarı stoktan geri ekle
+            }
+
+            // Bütçeyi geri ekle
+            var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
+            if (customer != null)
+            {
+                double totalPrice = (double)(order.TotalPrice); // Siparişin toplam fiyatı
+                customer.Budget += totalPrice; // Bütçeye harcanan parayı geri ekle
             }
 
             // Siparişi sepetten kaldır
@@ -389,6 +347,7 @@ public IActionResult AddToCart(int ProductID, int Quantity)
 
             return RedirectToAction("Card"); // Sepet sayfasına geri yönlendir
         }
+
 
 
 

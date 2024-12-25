@@ -5,6 +5,12 @@
 <p><strong>Bütçeniz:</strong> @Model.Customer.Budget TL</p>
 <p><strong>Toplam Harcamanız:</strong> @Model.Customer.TotalSpent TL</p
 <p><strong>Siparişlerim:</strong>  <a asp-action="OrderStatus" class="btn btn-success">Sipariş Durumu</a></p>
+
+<!-- Sepetim Butonu -->
+<p>
+    <a asp-action="Card" class="btn btn-info">Sepetim</a>
+</p>
+
 <h2>Ürün Listesi</h2>
 <table class="table">
     <thead>

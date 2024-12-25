@@ -80,6 +80,6 @@ else
 
 <!-- Eğer sepet boşsa, kullanıcıyı alışveriş yapmaya yönlendirebilirsiniz -->
 @if (!Model.Any())
-{
-    <a href="@Url.Action("Index", "Products")" class="btn btn-primary">Alışverişe Devam Et</a>
+{//burayı düzeltttt
+    <a href="@Url.Action("MY", "Customers")" class="btn btn-primary">Alışverişe Devam Et</a>
 }

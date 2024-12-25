@@ -1,8 +1,9 @@
-﻿@model List<yazlab3.Models.Order> 
+﻿@model List<yazlab3.Models.Order>
 
-<h2>Siparişleriniz</h2>  
+<h2>Siparişleriniz</h2>
 @{
     var orderStatusMessage = ViewBag.OrderStatusMessage as string;
+    var orderedModel = Model.OrderByDescending(order => order.OrderPriority).ToList(); // Önceliğe göre sıralama
 }
 
 @if (!string.IsNullOrEmpty(orderStatusMessage))
@@ -12,43 +13,44 @@
     </div>
 }
 
-<table class="table">  
-    <thead>  
-        <tr>  
-            <th>Ürün Adı</th>  
-            <th>Adet</th>  
-            <th>Toplam Fiyat</th>  
-            <th>Sipariş Durumu</th>  
-            <th>Bekleme Süresi</th>  
-            <th>Öncelik</th>  
-            <th>İşlemler</th> <!-- İşlem butonları için yeni bir sütun -->  
-        </tr>  
-    </thead>  
-    <tbody>  
-        @foreach (var order in Model)  
-        {  
-            <tr>  
-                <td>@order.Product.ProductID</td>  
-                <td>@order.Quantity</td>  
-                <td>@order.TotalPrice TL</td>  
+<table class="table">
+    <thead>
+        <tr>
+            <th>Ürün Adı</th>
+            <th>Adet</th>
+            <th>Toplam Fiyat</th>
+            <th>Sipariş Durumu</th>
+            <th>Bekleme Süresi</th>
+            <th>Öncelik</th>
+            <th>İşlemler</th> <!-- İşlem butonları için yeni bir sütun -->
+        </tr>
+    </thead>
+    <tbody id="orderTableBody">
+        @foreach (var order in orderedModel)
+        {
+            <tr class="order-row">
+                <td>@order.Product.ProductID</td>
+                <td>@order.Quantity</td>
+                <td>@order.TotalPrice TL</td>
                 <td>@order.OrderStatus</td>
                 <td>@(order.WaitTime.TotalMinutes) dakika</td> <!-- Bekleme süresini dakika cinsine çevir -->
-                <td>@order.OrderPriority</td> <!-- Siparişin önceliği -->  
-                <td>  
-                    @if (order.OrderStatus == "Sepette") // Eğer sipariş durumu onay bekliyorsa  
-                    {  
-                        <a href="@Url.Action("ApproveOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-success">Onayla</a>  
-                        <a href="@Url.Action("RejectOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-danger">Reddet</a>  
-                    }  
-                    else  
-                    {  
-                        <span class="text-muted">İşlem Tamamlandı</span> <!-- İşlem tamamlandıysa butonları gizle -->  
-                    }  
-                </td>  
-            </tr>  
-        }  
-    </tbody>  
+                <td>@order.OrderPriority</td> <!-- Siparişin önceliği -->
+                <td>
+                    @if (order.OrderStatus == "Sepette") // Eğer sipariş durumu onay bekliyorsa
+                    {
+                        <a href="@Url.Action("ApproveOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-success">Onayla</a>
+                        <a href="@Url.Action("RejectOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-danger">Reddet</a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">İşlem Tamamlandı</span> <!-- İşlem tamamlandıysa butonları gizle -->
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
 </table>
+
 <p>
     <a href="@Url.Action("ViewLogs", "Admin")">Logları Görüntüle</a>
 </p>

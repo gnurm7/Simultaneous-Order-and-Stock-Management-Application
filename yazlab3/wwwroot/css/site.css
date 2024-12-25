@@ -1,22 +1,122 @@
 html {
-  font-size: 14px;
+    font-size: 16px;
+    scroll-behavior: smooth; /* Yumuþak geçiþler */
+    background: linear-gradient(120deg, #a6c0fe, #f68084); /* Arka planda canlý bir degrade */
+    color: #444; /* Daha modern bir metin rengi */
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 18px;
+    }
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif; /* Þýk ve modern bir font */
+    background: transparent;
+    color: #333;
+    line-height: 1.6;
 }
+
+header {
+    background: rgba(0, 0, 0, 0.8); /* Yarý saydam siyah */
+    color: #fff;
+    padding: 1rem 2rem;
+    position: sticky; /* Sayfa kaydýrýldýðýnda sabit kalýr */
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px); /* Cam efekti */
+}
+
+    header .navbar-brand {
+        color: #ffcc00;
+        font-weight: bold;
+        font-size: 1.8rem;
+    }
+
+    header .nav-link {
+        color: #fff;
+        margin-left: 1rem;
+        transition: color 0.3s ease-in-out;
+    }
+
+        header .nav-link:hover {
+            color: #ffcc00;
+        }
+
+footer {
+    background: linear-gradient(to top, #222, #444); /* Zarif bir degrade footer */
+    color: #ddd;
+    text-align: center;
+    padding: 2rem 0;
+    box-shadow: 0px -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+    footer a {
+        color: #ffcc00;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+        footer a:hover {
+            color: #ffffff;
+        }
+
+.btn {
+    border-radius: 50px; /* Düðmeleri tamamen yuvarlak yapar */
+    background: linear-gradient(45deg, #f68084, #a6c0fe); /* Düðmelere degrade renkler */
+    color: white;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+    text-transform: uppercase; /* Büyük harf */
+}
+
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.3);
+    }
+
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+.card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+    .card:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 15px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .card img {
+        width: 100%;
+        height: auto;
+        border-bottom: 5px solid #258cfb; /* Görsel altýnda vurgu */
+    }
+
+.card-content {
+    padding: 1.5rem;
+    color: #333;
+}
+
+a {
+    color: #258cfb;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+    a:hover {
+        color: #ff6f61;
+    }
