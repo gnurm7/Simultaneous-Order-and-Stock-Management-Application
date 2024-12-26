@@ -3,10 +3,16 @@
 <h2>Siparişleriniz</h2>
 @{
     var orderStatusMessage = ViewBag.OrderStatusMessage as string;
+
+
+
     var orderedModel = Model.OrderByDescending(order => order.OrderPriority).ToList(); // Önceliğe göre sıralama
 }
 
 @if (!string.IsNullOrEmpty(orderStatusMessage))
+
+
+
 {
     <div class="alert alert-success">
         @orderStatusMessage
@@ -22,70 +28,83 @@
             <th>Sipariş Durumu</th>
             <th>Bekleme Süresi</th>
             <th>Öncelik</th>
-            <th>İşlemler</th>
+            <th>İşlemler</th> <!-- İşlem butonları için yeni bir sütun -->
         </tr>
     </thead>
     <tbody id="orderTableBody">
         @foreach (var order in orderedModel)
+
+
+
         {
-            <tr class="order-row" id="orderRow_@order.OrderID">
+            <tr class="order-row">
                 <td>@order.Product.ProductID</td>
                 <td>@order.Quantity</td>
                 <td>@order.TotalPrice TL</td>
                 <td>@order.OrderStatus</td>
-                <td class="wait-time">@((DateTime.Now - order.OrderDate).TotalMinutes) dakika</td> <!-- Bekleme süresi -->
-                <td class="order-priority">@order.OrderPriority</td> <!-- Siparişin önceliği -->
+                <td>@(order.WaitTime.TotalMinutes) dakika</td> <!-- Bekleme süresini dakika cinsine çevir -->
+                <td>@order.OrderPriority</td> <!-- Siparişin önceliği -->
                 <td>
-                    @if (order.OrderStatus == "Siparişiniz Alındı")
+                    @if (order.OrderStatus == "Siparişiniz Alındı") // Eğer sipariş durumu onay bekliyorsa
                     {
                         <a href="@Url.Action("ApproveOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-success">Onayla</a>
                         <a href="@Url.Action("RejectOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-danger">Reddet</a>
                     }
                     else
                     {
-                        <span class="text-muted">İşlem Tamamlandı</span>
+                        <span class="text-muted">İşlem Tamamlandı</span> <!-- İşlem tamamlandıysa butonları gizle -->
                     }
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
 <div>
     <form method="post" action="@Url.Action("ProcessAllOrders", "Admin")">
         <button type="submit" class="btn btn-primary">Tüm İşlemleri Başlat</button>
     </form>
 </div>
+
 <p>
     <a href="@Url.Action("ViewLogs", "Admin")">Logları Görüntüle</a>
 </p>
+<script>
+    function updateOrders() {
+        fetch('/Admin/GetUpdatedOrders')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('orderTableBody');
+                tbody.innerHTML = ''; // Tabloyu temizle
 
-@section Scripts
-{
-    <script>
-        $(document).ready(function () {
-            // Sayfa yüklendikten sonra sürekli çalışacak bir zamanlayıcı başlatıyoruz
-            setInterval(function () {
-                updateOrderDetails();
-            }, 10000); // Her 10 saniyede bir updateOrderDetails fonksiyonunu çağır
+                data.forEach(order => {
+                    const row = document.createElement('tr');
 
-            // AJAX ile siparişlerin bekleme süresi ve öncelik skorlarını güncelleyen fonksiyon
-            function updateOrderDetails() {
-                $.ajax({
-                    url: '@Url.Action("GetUpdatedOrders", "Admin")', // Admin controller'ındaki GetUpdatedOrders action'ı
-                    method: 'GET',
-                    success: function (data) {
-                        // Dönen verilerle her bir siparişi güncelle
-                        data.forEach(order => {
-                            var orderRow = $('#orderRow_' + order.OrderID);
-                            orderRow.find('.wait-time').text(order.WaitTime.toFixed(2) + " dakika"); // Bekleme süresi
-                            orderRow.find('.order-priority').text(order.OrderPriority); // Siparişin önceliği
-                        });
-                    },
-                    error: function () {
-                        console.error("Bekleme süresi ve öncelik güncellenemedi.");
-                    }
+                    row.innerHTML = `
+                        <td>${order.orderID}</td>
+                        <td>${order.waitTime.TotalMinutes.toFixed(2)} dakika</td>
+                        <td>${order.orderPriority}</td>
+                        <td>${order.orderStatus}</td>
+                        <td>
+                            ${order.orderStatus === 'Sepette' ? `
+                                <a href="/Admin/ApproveOrder?orderId=${order.orderID}" class="btn btn-success">Onayla</a>
+                                <a href="/Admin/RejectOrder?orderId=${order.orderID}" class="btn btn-danger">Reddet</a>
+                            ` : '<span class="text-muted">İşlem Tamamlandı</span>'}
+                        </td>
+                    `;
+
+                    tbody.appendChild(row);
                 });
-            }
-        });
-    </script>
-}
+            })
+            .catch(error => console.error('Veriler alınırken hata oluştu:', error));
+    }
+
+    // Her 3 saniyede bir tabloyu güncelle
+    setInterval(updateOrders, 3000);
+</script>
+<script>
+    // Her 5 saniyede bir sayfayı yeniler
+    setInterval(() => {
+        location.reload(); // Sayfayı yeniden yükler
+    }, 5000); // 5000 ms = 5 saniye
+</script>

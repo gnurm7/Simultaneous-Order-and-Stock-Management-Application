@@ -34,34 +34,46 @@ public class AdminController : Controller
     public IActionResult Index()
     {
         return View();
-    }          
+    }
+    // Sipariş listesini gösteren metod  
     // Sipariş listesini gösteren metod  
     public IActionResult OrderList()
-    {//inculude ile her şeyi getirebilioz
-        // Müşteri ve Ürün bilgileri ile birlikte siparişleri al  
+    {
+        // Tüm siparişleri müşteri ve ürün bilgileriyle birlikte getir
         var orders = _context.Orders
-            .Include(o => o.Customer) // Müşteri bilgilerini dahil et  
-            .Include(o => o.Product)   // Ürün bilgilerini dahil et  
-            .ToList(); // Tüm siparişleri al  
+            .Include(o => o.Customer) // Müşteri bilgilerini dahil et
+            .Include(o => o.Product)  // Ürün bilgilerini dahil et
+            .ToList();
 
-     //   new Thread(new ThreadStart(bilmemne)).Start();//Örnek veriyorum burda istediğin yerde çağırabilirsin keyfine göre mesela müsteri satın aldığı zaman çağırım b,herhangi contolreer önemli mi
-        return View(orders);
+        // Bekleme süresi ve öncelik değerlerini hesapla
+        foreach (var order in orders)
+        {
+            if (order.OrderStatus == "Siparişiniz Alındı") // Sadece bekleyen siparişler için hesaplama yap
+            {
+                // Bekleme süresini güncelle
+                order.WaitTime = DateTime.Now - order.OrderDate;
+
+                // Öncelik puanını güncelle
+                var customer = order.Customer;
+                if (customer != null)
+                {
+                    int basePriority = customer.CustomerType == "Premium" ? 15 : 10;
+                    double waitTimeWeight = 0.5; // Bekleme süresi ağırlığı
+                    double waitTimeInSeconds = order.WaitTime.TotalSeconds;
+
+                    order.OrderPriority = (int)(basePriority + (waitTimeInSeconds * waitTimeWeight));
+                    customer.PriorityScore = order.OrderPriority; // Müşteri öncelik skorunu da güncelle
+                }
+            }
+        }
+
+        // Değişiklikleri veritabanına kaydet
+        _context.SaveChanges();
+
+        // Siparişleri öncelik değerine göre sırala ve View'a gönder
+        var orderedOrders = orders.OrderByDescending(o => o.OrderPriority).ToList();
+        return View(orderedOrders);
     }
-
-
-    //    // bu gerçek bir log işlemi //log işlemi burasııııı
-    //    new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId,Logger.UserType.Admin ,"Bilgilendirme", "Satın alma başarılı.approveorderdaki buy içinde");//aynı context mesela 500 insert falan yaparsak elbet syncstate yersin
-
-
-    //    //new Thread(new ThreadStart(() => { ).Start();
-
-    //    //  new Thread(new ThreadStart(() =>
-    //    //  {//Şimdi o kadar 
-    //    //      new Logger.Log(customerID.Value, "Sepete Ekeleme İşlemi Yapıldı! Yapılan Tarih:" + DateTime.Now, Logger.UserType.Musteri);//Gördün mü mesela burda fonksiyonu süsleyedebilirsin farklı parametrelerde gönderebilirsin sana kalmış ben mesela tarih'i stringe ekledim sen onu ayrı alana basmak istersen ayrı parametre olarak gönder keyfine göre 
-    //    //  })
-    //    //  ).Start();
-    //    return "Ürün satın alındı.";
-    //}
     public IActionResult ApproveOrder(int orderId)
     {
         var existingOrder = _context.Orders
@@ -180,7 +192,7 @@ public class AdminController : Controller
                     {
                         var latestOrder = await _context.Orders
                                             .Include(o => o.Product)
-                                             .Where(o => o.CustomerID == log.CustomerID && o.OrderStatus == "Sepette")
+                                             .Where(o => o.CustomerID == log.CustomerID && o.OrderStatus == "Siparişiniz Alındı")
                                           .OrderByDescending(o => o.AddedToCartTime)
                                         .FirstOrDefaultAsync();
                         if (latestOrder != null)
