@@ -1,4 +1,4 @@
-﻿@model IEnumerable<yazlab3.Models.Log>
+﻿@model IEnumerable<yazlab3.Models.LogViewModel>
 
 @{
     ViewData["Title"] = "Loglar";
@@ -6,31 +6,30 @@
 
 <h2>Admin Logları</h2>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Müşteri ID</th>
-            <th>Sipariş ID</th>
-            <th>Log Türü</th>
-            <th>Log Detayları</th>
-            <th>Log Tarihi</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var log in Model)
-        {//order name ve order sayısı ekle
-            <tr>
-                <td>@log.LogID</td>
-                <td>@log.CustomerID</td>
-                <td>@log.OrderID</td>
-                <td>@log.LogType</td>
-                <td>@log.LogDetails</td>
-                <td>@log.LogDate</td>
-            </tr>
+@foreach (var log in Model)
+{
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <p><strong>Log ID:</strong> @log.LogID</p>
+        <p><strong>Müşteri ID:</strong> @log.CustomerID</p>
+        <p><strong>Log Türü:</strong> @log.LogType</p>
+        @if (log.CustomerType != null)
+        {
+            <p><strong>Müşteri Türü:</strong> @log.CustomerType</p>
         }
-    </tbody>
-</table>
+        @if (log.ProductName != null)
+        {
+            <p><strong>Ürün:</strong> @log.ProductName</p>
+        }
+
+        @if (log.Quantity != null)
+        {
+            <p><strong>Satın Alınan Miktar:</strong> @log.Quantity</p>
+        }
+        <p><strong>İşlem Zamanı:</strong> @log.LogDate</p>
+        <p><strong>İşlem Sonucu:</strong> @log.LogDetails</p>
+    </div>
+}
+
 
 <p>
     <a href="@Url.Action("OrderList", "Admin")">Siparişler Listesine Dön</a>

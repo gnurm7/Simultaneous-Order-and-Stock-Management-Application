@@ -36,7 +36,7 @@
                 <td class="wait-time">@((DateTime.Now - order.OrderDate).TotalMinutes) dakika</td> <!-- Bekleme süresi -->
                 <td class="order-priority">@order.OrderPriority</td> <!-- Siparişin önceliği -->
                 <td>
-                    @if (order.OrderStatus == "Sepette") 
+                    @if (order.OrderStatus == "Siparişiniz Alındı")
                     {
                         <a href="@Url.Action("ApproveOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-success">Onayla</a>
                         <a href="@Url.Action("RejectOrder", "Admin", new { orderId = order.OrderID })" class="btn btn-danger">Reddet</a>

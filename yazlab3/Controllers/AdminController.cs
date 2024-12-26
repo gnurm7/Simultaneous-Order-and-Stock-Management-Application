@@ -148,14 +148,64 @@ public class AdminController : Controller
         new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), orderId, Logger.UserType.Admin, "Bilgilendirme", "Sipariş reddedildi.");
         return RedirectToAction("OrderList"); // Sipariş listesi sayfasına yönlendir  
     }
-    public IActionResult ViewLogs()
+    public async Task<IActionResult> ViewLogs()
     {
-        var logs = _context.Logs
-                           .OrderByDescending(l => l.LogDate)  // Logları en yeni olanı en üstte olacak şekilde sırala
-                           .Take(20)  // Son 20 logu al
-                           .ToList();
+        var logs = await _context.Logs
+              .OrderByDescending(l => l.LogDate)
+              .Take(20)
+             .ToListAsync();
 
-        return View(logs);  // View'a logları gönder
+        var logViewModels = new List<LogViewModel>();
+
+        foreach (var log in logs)
+        {
+            var logViewModel = new LogViewModel
+            {
+                LogID = log.LogID,
+                CustomerID = log.CustomerID,
+                OrderID = log.OrderID,
+                LogType = log.LogType,
+                LogDetails = log.LogDetails,
+                LogDate = log.LogDate,
+            };
+            if (log.CustomerID != null)
+            {
+                var customer = await _context.Customers
+                .FirstOrDefaultAsync(c => c.CustomerID == log.CustomerID);
+
+                if (customer != null)
+                {
+                    logViewModel.CustomerType = customer.CustomerType;
+                    if (log.LogDetails == "Ürün sepete eklendi.")
+                    {
+                        var latestOrder = await _context.Orders
+                                            .Include(o => o.Product)
+                                             .Where(o => o.CustomerID == log.CustomerID && o.OrderStatus == "Sepette")
+                                          .OrderByDescending(o => o.AddedToCartTime)
+                                        .FirstOrDefaultAsync();
+                        if (latestOrder != null)
+                        {
+                            logViewModel.ProductName = latestOrder.Product.ProductName;
+                            logViewModel.Quantity = latestOrder.Quantity;
+                        }
+                    }
+                }
+
+            }
+            if (log.OrderID != null)
+            {
+                var order = await _context.Orders.Include(o => o.Product)
+                .FirstOrDefaultAsync(o => o.OrderID == log.OrderID);
+                if (order != null)
+                {
+                    logViewModel.ProductName = order.Product.ProductName;
+                    logViewModel.Quantity = order.Quantity;
+                }
+            }
+
+            logViewModels.Add(logViewModel);
+        }
+        return View(logViewModels);
     }
     [HttpPost]
     public IActionResult ProcessAllOrders()
@@ -163,7 +213,7 @@ public class AdminController : Controller
         var pendingOrders = _context.Orders
             .Include(o => o.Customer)  // Müşteri bilgilerini dahil et
             .Include(o => o.Product)   // Ürün bilgilerini dahil et
-            .Where(o => o.OrderStatus == "Sepette")  // Sadece bekleyen siparişleri al
+            .Where(o => o.OrderStatus == "Siparişiniz Alındı")  // Sadece bekleyen siparişleri al
             .OrderByDescending(o => o.OrderPriority) // Önceliğe göre sırala
             .ToList();
 
@@ -182,7 +232,7 @@ public class AdminController : Controller
                 order.OrderStatus = "Onaylandı";
                 order.ApprovalDate = DateTime.Now;
                 order.WaitTime = order.ApprovalDate - order.OrderDate;
-
+                //log burda olduğu için onaylanınca ürrün ismi gözükmücek çünkü hepsiinni onalıyor
                 new Logger.Log(HttpContext.Session.GetInt32("AdminID"), order.OrderID, Logger.UserType.Admin, "Bilgilendirme", "Sipariş onaylandı ve işleme alındı.");
             }
             else

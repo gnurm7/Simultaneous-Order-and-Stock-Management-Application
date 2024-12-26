@@ -197,45 +197,47 @@ public IActionResult AddToCart(int ProductID, int Quantity)
     new Logger.Log(customerID, null, Logger.UserType.Customer, "Bilgilendirme", "Ürün sepete eklendi.");
     return RedirectToAction("Card");
 }
-
-  public IActionResult Card()
-{
-    int? customerID = HttpContext.Session.GetInt32("CustomerID");
-    if (customerID == null)
-    {
-        return RedirectToAction("Login", "Customers");
-    }
-           // Zaman aşımı kontrolü
-      var now = DateTime.Now;
-    var expiredOrders = _context.Orders
-       .Where(o => o.CustomerID == customerID && o.OrderStatus == "Sepette")
-    .ToList() // Verileri önce client'a al
-    .Where(o => (DateTime.Now - o.AddedToCartTime).TotalMinutes > 5) // Sonrasında client tarafında hesapla
-    .ToList();
+        public IActionResult Card()
+        {
+            int? customerID = HttpContext.Session.GetInt32("CustomerID");
+            if (customerID == null)
+            {
+                return RedirectToAction("Login", "Customers");
+            }
+            // Zaman aşımı kontrolü
+            var now = DateTime.Now;
+            var expiredOrders = _context.Orders
+                .Where(o => o.CustomerID == customerID && o.OrderStatus == "Sepette")
+                .ToList() // Verileri önce client'a al
+                .Where(o => (now - o.AddedToCartTime).TotalMinutes > 5) // Sonrasında client tarafında hesapla
+                .ToList();
 
             foreach (var order in expiredOrders)
-    {
-        // Stok iadesi
-        var product = _context.Products.FirstOrDefault(p => p.ProductID == order.ProductID);
-        if (product != null)
-        {
-            product.Stock += order.Quantity;
+            {
+                // Stok iadesi
+                var product = _context.Products.FirstOrDefault(p => p.ProductID == order.ProductID);
+                if (product != null)
+                {
+                    product.Stock += order.Quantity;
+                }
+
+                // Siparişi kaldır
+                _context.Orders.Remove(order);
+                new Logger.Log(customerID, order.OrderID, Logger.UserType.Customer, "Bilgilendirme", "Sepetteki ürünün süresi dolduğu için sepetten çıkarıldı.");
+            }
+
+            _context.SaveChanges();
+
+            // Kullanıcının siparişlerini getir
+            var orders = _context.Orders
+                .Where(o => o.CustomerID == customerID && o.OrderStatus == "Sepette")
+                .Include(o => o.Product)
+                .ToList();
+
+            new Logger.Log(customerID, null, Logger.UserType.Customer, "Bilgilendirme", "Sepet görüntülendi.");
+
+            return View(orders);
         }
-
-        // Siparişi kaldır
-        _context.Orders.Remove(order);
-    }
-    _context.SaveChanges();
-
-    // Kullanıcının siparişlerini getir
-    var orders = _context.Orders
-        .Where(o => o.CustomerID == customerID && o.OrderStatus == "Sepette")
-        .Include(o => o.Product)
-        .ToList();
-
-    new Logger.Log(customerID, null, Logger.UserType.Customer, "Bilgilendirme", "Sepet görüntülendi.");
-    return View(orders);
-}
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Checkout(List<int> productIds, List<int> quantities)
@@ -246,6 +248,20 @@ public IActionResult AddToCart(int ProductID, int Quantity)
                 return RedirectToAction("Login", "Customers");
             }
 
+            // Kullanıcının sepetindeki siparişleri al
+            var cartOrders = _context.Orders
+                .Where(o => o.CustomerID == customerId && o.OrderStatus == "Sepette")
+                .ToList();
+
+            // Her bir siparişin durumunu "Siparişiniz Alındı" olarak güncelle
+            foreach (var order in cartOrders)
+            {
+                order.OrderStatus = "Siparişiniz Alındı";
+            }
+
+            _context.SaveChanges();
+
+
             // Siparişleri işleme
             for (int i = 0; i < productIds.Count; i++)
             {
@@ -254,19 +270,18 @@ public IActionResult AddToCart(int ProductID, int Quantity)
 
                 // Sipariş alma işlemi
                 string result = BuyProduct(customerId.Value, productId, quantity);
-
                 if (result != "Ürün satın alındı.")
                 {
                     TempData["ErrorMessage"] = result;
-                    return RedirectToAction("Card"); // Hata mesajını göster ve sepete geri dön
+                    return RedirectToAction("Card");
                 }
             }
 
-            // Sipariş başarıyla tamamlandı
+            // TempData mesajını set etme
             TempData["SuccessMessage"] = "Siparişiniz alındı. Admin onayını bekliyorsunuz.";
-            return RedirectToAction("Card"); // Sepete yönlendir
-        }
 
+            return RedirectToAction("OrderStatus");
+        }
         public string BuyProduct(int customerId, int productId, int quantity)
         {
             var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerId);
@@ -274,33 +289,39 @@ public IActionResult AddToCart(int ProductID, int Quantity)
             {
                 return "Kullanıcı bulunamadı.";
             }
-
             var product = _context.Products.FirstOrDefault(p => p.ProductID == productId);
             if (product == null || product.Stock < quantity)
             {
                 return "Ürün bulunamadı veya yetersiz stok.";
             }
-
-            double totalPrice =(double) product.Price * quantity;
-
+            double totalPrice = (double)product.Price * quantity;
             if (customer.Budget < totalPrice)
             {
                 return "Bütçe yetersiz.";
             }
-
             product.Stock -= quantity;
             customer.Budget -= totalPrice;
             customer.TotalSpent += totalPrice;
 
+            //Sipariş Oluşturma
+            Order order = new Order()
+            {
+                CustomerID = customerId,
+                ProductID = productId,
+                Quantity = quantity,
+                TotalPrice = product.Price * quantity,
+                OrderDate = DateTime.Now,
+                OrderStatus = "Siparişiniz Alındı",
+                AddedToCartTime = DateTime.Now // Sepete eklenme zamanını ayarla
+            };
+            _context.Orders.Add(order);
             _context.SaveChanges();
-
+            new Logger.Log(customerId, order.OrderID, Logger.UserType.Customer, "Bilgilendirme", "Sepete ürün eklendi.");
             return "Ürün satın alındı.";
         }
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult RemoveFromCart(int OrderID)
+        public async Task<IActionResult> RemoveFromCart(int OrderID)
         {
             int? customerID = HttpContext.Session.GetInt32("CustomerID");
             if (customerID == null)
@@ -315,39 +336,38 @@ public IActionResult AddToCart(int ProductID, int Quantity)
             }
 
             // Sepetindeki ürünün bilgilerini al
-            var order = _context.Orders.FirstOrDefault(o => o.OrderID == OrderID && o.CustomerID == customerID);
+            var order = await _context.Orders.Include(o => o.Product)
+                .FirstOrDefaultAsync(o => o.OrderID == OrderID && o.CustomerID == customerID);
+
             if (order == null)
             {
                 return NotFound("Sepetinizde böyle bir ürün yok.");
             }
 
             // Ürünü ve siparişi bulduktan sonra, stok miktarını arttır
-            var product = _context.Products.FirstOrDefault(p => p.ProductID == order.ProductID);
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.ProductID == order.ProductID);
+
             if (product != null)
             {
                 product.Stock += order.Quantity; // Sepetten çıkarılacak miktarı stoktan geri ekle
             }
-
             // Bütçeyi geri ekle
-            var customer = _context.Customers.FirstOrDefault(c => c.CustomerID == customerID);
+            var customer = await _context.Customers.FirstOrDefaultAsync(c => c.CustomerID == customerID);
             if (customer != null)
             {
                 double totalPrice = (double)(order.TotalPrice); // Siparişin toplam fiyatı
                 customer.Budget += totalPrice; // Bütçeye harcanan parayı geri ekle
             }
-
             // Siparişi sepetten kaldır
             _context.Orders.Remove(order);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            // Loglama işlemi (isteğe bağlı)
-            new Logger.Log(customerID, null, Logger.UserType.Customer, "Bilgilendirme", "Sepetten ürün çıkarıldı.");
+            // Loglama işlemi
+            new Logger.Log(customerID, order.OrderID, Logger.UserType.Customer, "Bilgilendirme", $"Sepetten {order.Product.ProductName} ürünü çıkarıldı.");
+
 
             return RedirectToAction("Card"); // Sepet sayfasına geri yönlendir
         }
-
-
-
 
         // GET: Customers/OrderStatus
         public IActionResult OrderStatus()
@@ -366,8 +386,6 @@ public IActionResult AddToCart(int ProductID, int Quantity)
             new Logger.Log(HttpContext.Session.GetInt32("CustomerID"), null, Logger.UserType.Customer, "Bilgilendirme", "Müşteri Satın aldığı ürünler sayfasında.");
             return View(orders);
         }
-
-
         // GET: Customers/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
