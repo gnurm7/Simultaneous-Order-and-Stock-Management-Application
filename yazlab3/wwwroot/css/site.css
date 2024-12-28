@@ -23,7 +23,7 @@ body {
 header {
     background: rgba(0, 0, 0, 0.8); /* Yarý saydam siyah */
     color: #fff;
-    padding: 1rem 2rem;
+    padding: 1rem 2rem;/*doldurma*/
     position: sticky; /* Sayfa kaydýrýldýðýnda sabit kalýr */
     top: 0;
     z-index: 1000;
