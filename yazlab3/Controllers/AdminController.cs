@@ -240,7 +240,11 @@ public class AdminController : Controller
                 product.Stock -= order.Quantity;
                 customer.Budget -= (double)order.TotalPrice;
                 customer.TotalSpent += (double)order.TotalPrice;
-
+                if (customer.TotalSpent >= 2000 && customer.CustomerType == "Standard")
+                {
+                    customer.CustomerType = "Premium";
+                    new Logger.Log(HttpContext.Session.GetInt32("CustumorID"), null, Logger.UserType.Customer, "Bilgilendirme", "Müşteri türü Premium olarak güncellendi.");
+                }
                 order.OrderStatus = "Onaylandı";
                 order.ApprovalDate = DateTime.Now;
                 order.WaitTime = order.ApprovalDate - order.OrderDate;

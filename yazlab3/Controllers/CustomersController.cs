@@ -285,11 +285,7 @@ public IActionResult AddToCart(int ProductID, int Quantity)
             }
 
             customer.TotalSpent += totalOrderPrice;
-            if (customer.TotalSpent >= 2000 && customer.CustomerType == "Standard")
-            {
-                customer.CustomerType = "Premium";
-                new Logger.Log(customerId, null, Logger.UserType.Customer, "Bilgilendirme", "Müşteri türü Premium olarak güncellendi.");
-            }
+            
             _context.SaveChanges();
             // TempData mesajını set etme
             TempData["SuccessMessage"] = "Siparişiniz alındı. Admin onayını bekliyorsunuz.";
